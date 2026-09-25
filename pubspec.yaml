@@ -10,19 +10,19 @@ resolution: workspace
 
 dependencies:
   core:
-    path: ../../packages/core
+    path: ../RaftarGadi-SharedPackages/packages/core
   localization:
-    path: ../../packages/localization
+    path: ../RaftarGadi-SharedPackages/packages/localization
   repositories:
-    path: ../../packages/repositories
+    path: ../RaftarGadi-SharedPackages/packages/repositories
   shared_models:
-    path: ../../packages/shared_models
+    path: ../RaftarGadi-SharedPackages/packages/shared_models
   storage:
-    path: ../../packages/storage
+    path: ../RaftarGadi-SharedPackages/packages/storage
   shared_widgets:
-    path: ../../packages/shared_widgets
+    path: ../RaftarGadi-SharedPackages/packages/shared_widgets
   design_system:
-    path: ../../packages/design_system
+    path: ../RaftarGadi-SharedPackages/packages/design_system
   cupertino_icons: ^1.0.8
   flutter:
     sdk: flutter

@@ -25,10 +25,18 @@ class _LicenseScreenState extends ConsumerState<LicenseScreen> {
   Future<void> _submit() async {
     final text = _license.text.trim();
     if (text.isEmpty) return;
+
+    final regex = RegExp(r'^[A-Z]{2}[0-9]{2}[0-9]{4}[0-9]{7}$');
+    if (!regex.hasMatch(text)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Invalid Driving License format. Please use format like DL1420110012345 without spaces.')),
+      );
+      return;
+    }
     
     setState(() => _busy = true);
     
-    final result = await ref.read(driverRepositoryProvider).registerDriver(text);
+    final result = await ref.read(driverRepositoryProvider).verifyLicense(text);
     if (!mounted) return;
     setState(() => _busy = false);
     
