@@ -1,10 +1,12 @@
-import 'auth_page.dart';
-import 'package:driver_app/app/router/routes.dart';
 import 'package:design_system/design_system.dart';
+import 'package:driver_app/app/router/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:repositories/repositories.dart';
+import 'package:shared_widgets/shared_widgets.dart';
+
+import 'auth_page.dart';
 
 class PhoneScreen extends ConsumerStatefulWidget {
   const PhoneScreen({super.key});
@@ -55,37 +57,39 @@ class _PhoneScreenState extends ConsumerState<PhoneScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return AuthPage(
-      eyebrow: 'Driver Login',
-      title: 'Drive with Raftar.',
-      subtitle: 'Enter your phone number to sign in as a driver.',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          RaftarTextField(
-            label: 'Phone number',
-            controller: _phone,
-            hint: '98765 43210',
-            prefixIcon: Icons.phone_rounded,
-            keyboardType: TextInputType.phone,
-            errorText: _error,
-            onChanged: (_) {
-              if (_error != null) setState(() => _error = null);
-            },
-          ),
-          const SizedBox(height: RaftarSpacing.xl),
-          RaftarButton(
-            label: 'Continue with OTP',
-            isLoading: _busy,
-            onPressed: _requestOtp,
-          ),
-          const SizedBox(height: RaftarSpacing.xl),
-          Text(
-            'By continuing, you agree to our Driver Terms of Service.',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-        ],
+    return DoubleBackExitScope(
+      child: AuthPage(
+        eyebrow: 'Driver Login',
+        title: 'Drive with Raftar.',
+        subtitle: 'Enter your phone number to sign in as a driver.',
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            RaftarTextField(
+              label: 'Phone number',
+              controller: _phone,
+              hint: '98765 43210',
+              prefixIcon: Icons.phone_rounded,
+              keyboardType: TextInputType.phone,
+              errorText: _error,
+              onChanged: (_) {
+                if (_error != null) setState(() => _error = null);
+              },
+            ),
+            const SizedBox(height: RaftarSpacing.xl),
+            RaftarButton(
+              label: 'Continue with OTP',
+              isLoading: _busy,
+              onPressed: _requestOtp,
+            ),
+            const SizedBox(height: RaftarSpacing.xl),
+            Text(
+              'By continuing, you agree to our Driver Terms of Service.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
       ),
     );
   }

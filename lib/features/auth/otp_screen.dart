@@ -1,4 +1,3 @@
-import 'auth_page.dart';
 import 'dart:async';
 
 import 'package:driver_app/session/session_controller.dart';
@@ -59,11 +58,14 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       (user) async {
         await ref.read(sessionControllerProvider.notifier).signIn(user);
         if (mounted) {
-          // If we need onboarding for drivers, navigate there. Otherwise router will handle.
-          // Wait, does the router redirect handle registerLicense? Let's assume after auth we want to check license, but for now let's just let router redirect or we can push it.
-          // Actually, let's just let the router navigate home if authenticated. But the requirements say "Build a simple license_screen.dart... fake submit button navigates to Home."
-          // So if we need to show it, we can navigate here:
-          context.go(Routes.registerLicense);
+          final stage = ref.read(sessionControllerProvider).stage;
+          if (stage == OnboardingStage.completed) {
+            context.go(Routes.home);
+          } else if (stage == OnboardingStage.needsVehicle) {
+            context.go(Routes.registerVehicle);
+          } else {
+            context.go(Routes.registerLicense);
+          }
         }
       },
     );
@@ -79,6 +81,11 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              const SizedBox(height: RaftarSpacing.xl),
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: RaftarLogo(height: 44, onNavyPanel: true),
+              ),
               const SizedBox(height: RaftarSpacing.xl),
               Text(
                 'Verify your number',
