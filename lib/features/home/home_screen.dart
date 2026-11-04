@@ -351,14 +351,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     ref.read(socketServiceProvider).setDriverOffline();
   }
 
+  @override
+  void deactivate() {
+    _locationHeartbeatTimer?.cancel();
+    _locationHeartbeatTimer = null;
+    super.deactivate();
+  }
+
   void _startLocationTracking() {
     _locationHeartbeatTimer?.cancel();
-    ref.read(locationServiceProvider).startTracking(
+    final locService = ref.read(locationServiceProvider);
+    final bookingRepo = ref.read(bookingRepositoryProvider);
+    final socketService = ref.read(socketServiceProvider);
+
+    locService.startTracking(
       onLocationUpdate: (position) {
+        if (!mounted || !_isOnline) return;
         final activeBooking = _dashboardData?['activeBooking'] as Map<String, dynamic>?;
         final bookingId = activeBooking?['id'] as String?;
         // HTTP update fallback
-        ref.read(bookingRepositoryProvider).updateDriverLocation(
+        bookingRepo.updateDriverLocation(
           latitude: position.latitude,
           longitude: position.longitude,
           heading: position.heading,
@@ -366,7 +378,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           bookingId: bookingId,
         );
         // WebSocket real-time update with accuracy
-        ref.read(socketServiceProvider).sendDriverLocation(
+        socketService.sendDriverLocation(
           latitude: position.latitude,
           longitude: position.longitude,
           heading: position.heading,
@@ -383,19 +395,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
     // Periodic heartbeat every 30s to keep driver location fresh in Redis even when stationary
     _locationHeartbeatTimer = Timer.periodic(const Duration(seconds: 30), (_) async {
-      if (!_isOnline || !mounted) return;
-      final pos = await ref.read(locationServiceProvider).getCurrentPosition();
+      if (!_isOnline || !mounted) {
+        _locationHeartbeatTimer?.cancel();
+        return;
+      }
+      final pos = await locService.getCurrentPosition();
       if (pos == null || !mounted || !_isOnline) return;
       final activeBooking = _dashboardData?['activeBooking'] as Map<String, dynamic>?;
       final bookingId = activeBooking?['id'] as String?;
-      ref.read(bookingRepositoryProvider).updateDriverLocation(
+      bookingRepo.updateDriverLocation(
         latitude: pos.latitude,
         longitude: pos.longitude,
         heading: pos.heading,
         speed: pos.speed,
         bookingId: bookingId,
       );
-      ref.read(socketServiceProvider).sendDriverLocation(
+      socketService.sendDriverLocation(
         latitude: pos.latitude,
         longitude: pos.longitude,
         heading: pos.heading,
