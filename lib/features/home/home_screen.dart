@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:core/core.dart';
 import 'package:design_system/design_system.dart';
 import 'package:driver_app/app/router/routes.dart';
+import 'package:driver_app/services/driver_alert_service.dart';
 import 'package:driver_app/services/location_service.dart';
 import 'package:driver_app/session/session_controller.dart';
 import 'package:flutter/material.dart';
@@ -57,12 +58,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         .getServiceStatusStream()
         .listen(_onServiceStatusChanged);
 
+    // Wire notification action clicks from lock screen / Heads-Up popup
+    ref.read(driverAlertServiceProvider).setActionCallback((bookingId, accepted) {
+      if (!mounted) return;
+      if (accepted) {
+        if (_isIncomingModalShowing) {
+          Navigator.of(context, rootNavigator: true).pop(true);
+        } else {
+          _executeTripStep(bookingId, 'accept', 180, 'RG-001');
+        }
+      } else {
+        if (_isIncomingModalShowing) {
+          Navigator.of(context, rootNavigator: true).pop(false);
+        }
+      }
+    });
+
     _fetchDashboard();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    ref.read(driverAlertServiceProvider).stopAlert();
     _locationHeartbeatTimer?.cancel();
     _serviceStatusSub?.cancel();
     _incomingOrderSub?.cancel();
@@ -282,14 +300,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     _incomingOrderSub = socket.watchIncomingOrders().listen((order) {
       if (!mounted) return;
       final activeBooking = _dashboardData?['activeBooking'];
-      if (_isOnline && activeBooking == null && !_isIncomingModalShowing) {
-        _showIncomingOrderModal(order);
+      if (_isOnline && activeBooking == null) {
+        // Trigger loud Rapido-style alert chime & high-priority Heads-Up Notification
+        ref.read(driverAlertServiceProvider).triggerIncomingOrderAlert(
+          order: order,
+          onAction: (bookingId, accepted) {
+            if (!mounted) return;
+            if (accepted) {
+              final fare = order['estimatedFare'] ?? order['finalFare'] ?? 180;
+              final bookingNumber = order['bookingNumber'] as String? ?? 'RG-001';
+              _executeTripStep(bookingId, 'accept', fare, bookingNumber);
+            }
+          },
+        );
+
+        if (!_isIncomingModalShowing) {
+          _showIncomingOrderModal(order);
+        }
       }
     });
 
     _bookingTakenSub?.cancel();
     _bookingTakenSub = socket.watchBookingTaken().listen((taken) {
       if (!mounted) return;
+      ref.read(driverAlertServiceProvider).stopAlert();
       final takenBookingId = taken['bookingId'];
       if (_isIncomingModalShowing && _currentIncomingOrderId == takenBookingId) {
         _isIncomingModalShowing = false;
@@ -307,6 +341,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   void _tearDownSocket() {
+    ref.read(driverAlertServiceProvider).stopAlert();
     _locationHeartbeatTimer?.cancel();
     _locationHeartbeatTimer = null;
     _incomingOrderSub?.cancel();
@@ -637,6 +672,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       backgroundColor: Colors.transparent,
       builder: (ctx) => _IncomingOrderModal(order: order),
     ).then((accepted) {
+      ref.read(driverAlertServiceProvider).stopAlert();
       _isIncomingModalShowing = false;
       _currentIncomingOrderId = null;
       if (accepted == true) {
