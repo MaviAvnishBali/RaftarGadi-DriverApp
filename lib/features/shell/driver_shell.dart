@@ -44,6 +44,13 @@ class _DriverShellState extends ConsumerState<DriverShell>
   }
 
   @override
+  void deactivate() {
+    _serviceStatusSub?.cancel();
+    _serviceStatusSub = null;
+    super.deactivate();
+  }
+
+  @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _serviceStatusSub?.cancel();
@@ -53,28 +60,44 @@ class _DriverShellState extends ConsumerState<DriverShell>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _checkLocationOnResume();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _checkLocationOnResume();
+        }
+      });
     }
   }
 
   Future<void> _checkLocationOnResume() async {
-    final status = await ref.read(locationServiceProvider).checkStatus();
-    if (!status.isGranted) {
-      await _forceGoOffline(
-        !status.isServiceEnabled
-            ? 'Device GPS is turned OFF. You have been placed OFFLINE.'
-            : 'Location permission is required. You have been placed OFFLINE.',
-      );
+    if (!mounted) return;
+    try {
+      final locService = ref.read(locationServiceProvider);
+      final status = await locService.checkStatus();
+      if (!mounted) return;
+      if (!status.isGranted) {
+        await _forceGoOffline(
+          !status.isServiceEnabled
+              ? 'Device GPS is turned OFF. You have been placed OFFLINE.'
+              : 'Location permission is required. You have been placed OFFLINE.',
+        );
+      }
+    } catch (e) {
+      debugPrint('[DriverShell] _checkLocationOnResume error: $e');
     }
   }
 
   Future<void> _forceGoOffline(String message) async {
+    if (!mounted) return;
+    final driverRepo = ref.read(driverRepositoryProvider);
+    final locService = ref.read(locationServiceProvider);
+    final socketService = ref.read(socketServiceProvider);
+
     try {
-      await ref.read(driverRepositoryProvider).goOffline();
+      await driverRepo.goOffline();
     } catch (_) {}
     try {
-      ref.read(locationServiceProvider).stopTracking();
-      ref.read(socketServiceProvider).setDriverOffline();
+      locService.stopTracking();
+      socketService.setDriverOffline();
     } catch (_) {}
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(

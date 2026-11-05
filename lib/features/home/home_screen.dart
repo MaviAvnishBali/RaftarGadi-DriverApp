@@ -92,24 +92,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _verifyLocationState();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _verifyLocationState();
+        }
+      });
     }
   }
 
   Future<void> _verifyLocationState() async {
-    final locService = ref.read(locationServiceProvider);
-    final locStatus = await locService.checkStatus();
     if (!mounted) return;
-    setState(() {
-      _locationStatus = locStatus;
-    });
+    try {
+      final locService = ref.read(locationServiceProvider);
+      final locStatus = await locService.checkStatus();
+      if (!mounted) return;
+      setState(() {
+        _locationStatus = locStatus;
+      });
 
-    if (_isOnline && !locStatus.isGranted) {
-      await _forceGoOfflineDueToLocation(
-        !locStatus.isServiceEnabled
-            ? 'Device GPS is turned OFF. You have been placed OFFLINE.'
-            : 'Location permission is required. You have been placed OFFLINE.',
-      );
+      if (_isOnline && !locStatus.isGranted) {
+        await _forceGoOfflineDueToLocation(
+          !locStatus.isServiceEnabled
+              ? 'Device GPS is turned OFF. You have been placed OFFLINE.'
+              : 'Location permission is required. You have been placed OFFLINE.',
+        );
+      }
+    } catch (e) {
+      debugPrint('[HomeScreen] _verifyLocationState error: $e');
     }
   }
 

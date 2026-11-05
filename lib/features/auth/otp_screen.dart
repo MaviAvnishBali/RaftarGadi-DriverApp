@@ -57,16 +57,6 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       },
       (user) async {
         await ref.read(sessionControllerProvider.notifier).signIn(user);
-        if (mounted) {
-          final stage = ref.read(sessionControllerProvider).stage;
-          if (stage == OnboardingStage.completed) {
-            context.go(Routes.home);
-          } else if (stage == OnboardingStage.needsVehicle) {
-            context.go(Routes.registerVehicle);
-          } else {
-            context.go(Routes.registerLicense);
-          }
-        }
       },
     );
   }
