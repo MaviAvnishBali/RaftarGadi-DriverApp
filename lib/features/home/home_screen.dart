@@ -315,6 +315,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           order: order,
           onAction: (bookingId, accepted) {
             if (!mounted) return;
+            if (_isIncomingModalShowing) {
+              _isIncomingModalShowing = false;
+              _currentIncomingOrderId = null;
+              try {
+                Navigator.of(context, rootNavigator: true).pop(accepted);
+              } catch (_) {}
+            }
             if (accepted) {
               final fare = order['estimatedFare'] ?? order['finalFare'] ?? 180;
               final bookingNumber = order['bookingNumber'] as String? ?? 'RG-001';
