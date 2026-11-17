@@ -59,34 +59,144 @@ class _PhoneScreenState extends ConsumerState<PhoneScreen> {
   Widget build(BuildContext context) {
     return DoubleBackExitScope(
       child: AuthPage(
-        eyebrow: 'Driver Login',
-        title: 'Drive with Raftar.',
-        subtitle: 'Enter your phone number to sign in as a driver.',
+        eyebrow: 'Partner Portal',
+        title: 'Welcome Back!',
+        subtitle: 'Enter your registered mobile number to continue.',
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            RaftarTextField(
-              label: 'Phone number',
-              controller: _phone,
-              hint: '98765 43210',
-              prefixIcon: Icons.phone_rounded,
-              keyboardType: TextInputType.phone,
-              errorText: _error,
-              onChanged: (_) {
-                if (_error != null) setState(() => _error = null);
-              },
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: RaftarColors.navyCard,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: RaftarColors.navyBorder),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Mobile Number',
+                    style: TextStyle(
+                      color: RaftarColors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: RaftarColors.navyDark,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: RaftarColors.navyBorder),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '🇮🇳 +91',
+                              style: TextStyle(
+                                color: RaftarColors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: _phone,
+                          keyboardType: TextInputType.phone,
+                          style: const TextStyle(
+                            color: RaftarColors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'Enter 10-digit number',
+                            hintStyle: TextStyle(
+                              color: RaftarColors.white.withValues(alpha: 0.35),
+                              fontSize: 14,
+                            ),
+                            filled: true,
+                            fillColor: RaftarColors.navyDark,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(color: RaftarColors.navyBorder),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(color: RaftarColors.navyBorder),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(color: RaftarColors.green, width: 1.5),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                          ),
+                          onChanged: (_) {
+                            if (_error != null) setState(() => _error = null);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (_error != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      _error!,
+                      style: const TextStyle(color: RaftarColors.error, fontSize: 12),
+                    ),
+                  ],
+                ],
+              ),
             ),
             const SizedBox(height: RaftarSpacing.xl),
             RaftarButton(
-              label: 'Continue with OTP',
+              label: 'Send OTP',
               isLoading: _busy,
               onPressed: _requestOtp,
             ),
             const SizedBox(height: RaftarSpacing.xl),
+            Center(
+              child: Wrap(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Text(
+                    'New driver partner? ',
+                    style: TextStyle(
+                      color: RaftarColors.white.withValues(alpha: 0.6),
+                      fontSize: 13,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => context.push(Routes.registerLicense),
+                    child: const Text(
+                      'Register Now',
+                      style: TextStyle(
+                        color: RaftarColors.green,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: RaftarSpacing.md),
             Text(
-              'By continuing, you agree to our Driver Terms of Service.',
+              'By continuing, you agree to our Driver Terms & Conditions.',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall,
+              style: TextStyle(
+                color: RaftarColors.white.withValues(alpha: 0.4),
+                fontSize: 11,
+              ),
             ),
           ],
         ),

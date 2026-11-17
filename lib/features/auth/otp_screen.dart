@@ -6,8 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mock_data/mock_data.dart' show kDemoOtp;
 import 'package:repositories/repositories.dart';
-import 'package:driver_app/app/router/routes.dart';
-import 'package:go_router/go_router.dart';
 
 class OtpScreen extends ConsumerStatefulWidget {
   const OtpScreen({required this.phone, super.key});

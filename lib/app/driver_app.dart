@@ -12,7 +12,9 @@ class RaftarDriverApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'Raftar Driver',
       debugShowCheckedModeBanner: false,
-      theme: RaftarTheme.light,
+      theme: RaftarTheme.dark,
+      darkTheme: RaftarTheme.dark,
+      themeMode: ThemeMode.dark,
       routerConfig: ref.watch(appRouterProvider),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,

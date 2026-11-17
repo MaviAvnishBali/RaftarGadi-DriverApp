@@ -3,6 +3,7 @@ import 'package:driver_app/features/auth/otp_screen.dart';
 import 'package:driver_app/features/auth/phone_screen.dart';
 import 'package:driver_app/features/documents/driver_documents_screen.dart';
 import 'package:driver_app/features/home/home_screen.dart';
+import 'package:driver_app/features/onboarding/driver_welcome_screen.dart';
 import 'package:driver_app/features/onboarding/license_screen.dart';
 import 'package:driver_app/features/onboarding/vehicle_screen.dart';
 import 'package:driver_app/features/profile/driver_profile_screen.dart';
@@ -35,16 +36,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       // 1. Still resolving storage/backend? Stay on splash.
       if (session.status == SessionStatus.unknown) {
+        if (location == Routes.welcome || location.startsWith(Routes.login)) {
+          return null;
+        }
         return location == Routes.splash ? null : Routes.splash;
       }
 
       final atSplash = location == Routes.splash;
-      final inLogin = location.startsWith(Routes.login);
+      final inLogin = location.startsWith(Routes.login) || location == Routes.welcome;
       final inOnboarding = location == Routes.registerLicense || location == Routes.registerVehicle;
 
-      // 2. Unauthenticated: send to login if not already in login flow
+      // 2. Unauthenticated: send to welcome if not already in login flow
       if (session.status == SessionStatus.unauthenticated) {
-        return inLogin ? null : Routes.login;
+        return inLogin ? null : Routes.welcome;
       }
 
       // 3. Authenticated: Route based on OnboardingStage
@@ -67,6 +71,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.splash,
         builder: (context, state) => const SplashScreen(),
+      ),
+      GoRoute(
+        path: Routes.welcome,
+        builder: (context, state) => const DriverWelcomeScreen(),
       ),
       GoRoute(
         path: Routes.login,

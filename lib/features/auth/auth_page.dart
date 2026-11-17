@@ -34,21 +34,36 @@ class AuthPage extends StatelessWidget {
           children: [
             const Align(
               alignment: Alignment.centerLeft,
-              child: RaftarLogo(height: 48),
+              child: RaftarLogo(
+                height: 44,
+                isPartner: true,
+                onNavyPanel: true,
+              ),
             ),
-            const SizedBox(height: RaftarSpacing.huge),
+            const SizedBox(height: RaftarSpacing.xxl),
             Text(
               eyebrow.toUpperCase(),
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: RaftarColors.primary,
+                color: RaftarColors.green,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 1.1,
               ),
             ),
             const SizedBox(height: RaftarSpacing.sm),
-            Text(title, style: Theme.of(context).textTheme.headlineMedium),
+            Text(
+              title,
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    color: RaftarColors.white,
+                    fontWeight: FontWeight.w800,
+                  ),
+            ),
             const SizedBox(height: RaftarSpacing.sm),
-            Text(subtitle, style: Theme.of(context).textTheme.bodyLarge),
+            Text(
+              subtitle,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: RaftarColors.white.withValues(alpha: 0.7),
+                  ),
+            ),
             const SizedBox(height: RaftarSpacing.xxxl),
             child,
           ],
@@ -57,6 +72,7 @@ class AuthPage extends StatelessWidget {
     );
 
     return Scaffold(
+      backgroundColor: RaftarColors.navyDark,
       body: SafeArea(
         child: ResponsiveBuilder(
           mobile: (_) => SingleChildScrollView(child: form),

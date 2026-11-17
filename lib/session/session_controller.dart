@@ -82,83 +82,91 @@ class SessionController extends Notifier<SessionState> {
     return const SessionState.unknown();
   }
 
+  void setUnauthenticated() {
+    state = const SessionState(
+      status: SessionStatus.unauthenticated,
+      stage: OnboardingStage.unauthenticated,
+    );
+  }
+
   /// Restores a persisted session, if any, and queries the backend to determine onboarding progress.
   Future<void> bootstrap() async {
-    final raw = _store.read<String>(_userKey);
-    final token = _store.read<String>(_tokenKey);
-    final refreshToken = _store.read<String>(_refreshKey);
-
-    if (token != null && token.isNotEmpty) {
-      ref.read(apiClientProvider).setAuthToken(token);
-    }
-    if (refreshToken != null && refreshToken.isNotEmpty) {
-      ref.read(apiClientProvider).setRefreshToken(refreshToken);
-    }
-
-    if (raw == null || token == null || token.isEmpty) {
-      state = const SessionState(
-        status: SessionStatus.unauthenticated,
-        stage: OnboardingStage.unauthenticated,
-      );
-      return;
-    }
-
-    AppUser user;
     try {
-      user = AppUser.fromJson(jsonDecode(raw) as Map<String, dynamic>);
-    } catch (_) {
-      await signOut();
-      return;
-    }
+      final raw = _store.read<String>(_userKey);
+      final token = _store.read<String>(_tokenKey);
+      final refreshToken = _store.read<String>(_refreshKey);
 
-    // Verify session and fetch driver profile to check onboarding completion
-    final profileResult = await ref.read(driverRepositoryProvider).getProfile();
+      if (token != null && token.isNotEmpty) {
+        ref.read(apiClientProvider).setAuthToken(token);
+      }
+      if (refreshToken != null && refreshToken.isNotEmpty) {
+        ref.read(apiClientProvider).setRefreshToken(refreshToken);
+      }
 
-    await profileResult.match(
-      (failure) async {
-        // If 401 / unauthorized and we have a refresh token, try refreshing
-        if (failure.message.contains('401') || failure.message.contains('Unauthorized')) {
-          if (refreshToken != null && refreshToken.isNotEmpty) {
-            final refreshed = await ref.read(authRepositoryProvider).refreshSession(refreshToken);
-            final refreshSuccess = await refreshed.match(
-              (refreshFail) async => false,
-              (newToken) async {
-                await _store.write(_tokenKey, newToken);
-                final newRefreshToken = ref.read(apiClientProvider).refreshToken;
-                if (newRefreshToken != null) {
-                  await _store.write(_refreshKey, newRefreshToken);
-                }
-                return true;
-              },
-            );
+      if (raw == null || token == null || token.isEmpty) {
+        setUnauthenticated();
+        return;
+      }
 
-            if (refreshSuccess) {
-              // Retry getting profile with the refreshed token
-              final retryProfile = await ref.read(driverRepositoryProvider).getProfile();
-              retryProfile.match(
-                (_) => signOut(),
-                (driverData) {
-                  _applyDriverProfile(user, driverData);
+      AppUser user;
+      try {
+        user = AppUser.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+      } catch (_) {
+        await signOut();
+        return;
+      }
+
+      // Verify session and fetch driver profile to check onboarding completion
+      final profileResult = await ref.read(driverRepositoryProvider).getProfile();
+
+      await profileResult.match(
+        (failure) async {
+          // If 401 / unauthorized and we have a refresh token, try refreshing
+          if (failure.message.contains('401') || failure.message.contains('Unauthorized')) {
+            if (refreshToken != null && refreshToken.isNotEmpty) {
+              final refreshed = await ref.read(authRepositoryProvider).refreshSession(refreshToken);
+              final refreshSuccess = await refreshed.match(
+                (refreshFail) async => false,
+                (newToken) async {
+                  await _store.write(_tokenKey, newToken);
+                  final newRefreshToken = ref.read(apiClientProvider).refreshToken;
+                  if (newRefreshToken != null) {
+                    await _store.write(_refreshKey, newRefreshToken);
+                  }
+                  return true;
                 },
               );
-              return;
-            }
-          }
-          await signOut();
-          return;
-        }
 
-        // On network/server failure during offline, assume completed if previously onboarded
-        state = SessionState(
-          status: SessionStatus.authenticated,
-          user: user,
-          stage: OnboardingStage.completed,
-        );
-      },
-      (driverData) {
-        _applyDriverProfile(user, driverData);
-      },
-    );
+              if (refreshSuccess) {
+                // Retry getting profile with the refreshed token
+                final retryProfile = await ref.read(driverRepositoryProvider).getProfile();
+                retryProfile.match(
+                  (_) => signOut(),
+                  (driverData) {
+                    _applyDriverProfile(user, driverData);
+                  },
+                );
+                return;
+              }
+            }
+            await signOut();
+            return;
+          }
+
+          // On network/server failure during offline, assume completed if previously onboarded
+          state = SessionState(
+            status: SessionStatus.authenticated,
+            user: user,
+            stage: OnboardingStage.completed,
+          );
+        },
+        (driverData) {
+          _applyDriverProfile(user, driverData);
+        },
+      );
+    } catch (_) {
+      setUnauthenticated();
+    }
   }
 
   void _applyDriverProfile(AppUser user, Map<String, dynamic> driverData) {
